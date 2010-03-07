@@ -9,6 +9,8 @@ CD = cd
 PYTHON = python
 PERL = perl
 LN_S = ln -s
+LN_SF = ln -sf
+TOUCH = touch
 PLATFORM ?= $(shell uname -s)
 
 ifeq ($(PLATFORM),SunOS)
@@ -22,26 +24,40 @@ NAME ?= $(strip $(shell perl -ne '/AGENT_NAME.+?([\w\-]+)/ && print $$1' app.js)
 VERSION ?= $(strip $(shell perl -ne '/VERSION.+?(\d+\.\d+)/ && print $$1' app.js))
 PREFIX ?= /opt/local/agents/$(NAME)
 
-all :: build
+all: build
 
-checkout:
+checkout: ./.UPTODATE
+./.UPTODATE: 
 	$(GIT) submodule init
 	$(GIT) submodule update
+	$(TOUCH) node/.UPTODATE
+	$(TOUCH) postgres/.UPTODATE
+	$(TOUCH) router/.UPTODATE
+	$(TOUCH) ./.UPTODATE
 
-build :: build_node build_router
+build: build_node build_router
 
-build_node :: checkout
+build_node: checkout node/.BUILT
+node/.BUILT:
 	$(CD) node; $(PYTHON) tools/waf-light configure --prefix=$(PREFIX)/local/
 	$(CD) node; $(PYTHON) tools/waf-light build
+	$(TOUCH) node/.BUILT
 
-build_postgres :: checkout build_node
+
+
+build_postgres: checkout build_node postgres/.BUILT
+postgres/.BUILT:
 	$(CD) postgres; $(PREFIX)/local/bin/node-waf configure build
-	-$(CD) postgres; $(MV) postgres.js index.js
+	$(CD) postgres; $(LN_SF) postgres.js index.js
+	$(TOUCH) postgres/.BUILT
 
-build_router :: checkout build_node
-	-$(CD) router; $(MV) node-router.js index.js
+build_router: checkout build_node router/.BUILT
+router/.BUILT:
+	$(CD) router; $(LN_SF) node-router.js index.js
+	$(TOUCH) router/.BUILT
 
-clean :: clean_node clean_libs
+clean: clean_node clean_libs
+	-$(RM_RF) ./.UPTODATE
 
 clean_node:
 	-$(RM_RF) node
