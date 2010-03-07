@@ -1,7 +1,7 @@
 
 var sys = require("sys");
-var postgres = require("/usr/local/node_0.1.30/lib/postgres");
-var server = require('./node-router');
+var postgres = require("postgres");
+var server = require('router');
 
 
 /**
