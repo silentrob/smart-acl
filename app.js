@@ -3,6 +3,7 @@ var AGENT_NAME = 'smart-acl';
 var VERSION = '0.01';
 
 var sys = require("sys");
+var posix = require("fs");
 var postgres = require("postgres");
 var server = require('router');
 var ini = require('ini');
@@ -152,6 +153,8 @@ var Base64 = {
 // -- 
 var c;
 var smartaclconfig;
+var auth;
+var super_user;
 
 posix.readFile(smartAclConfig, function(e, d) {
     if(e){
@@ -164,7 +167,13 @@ posix.readFile(smartAclConfig, function(e, d) {
             throw new Error("[ERROR] Unable to parse config file '" + smartAclConfig + "': " + err);
         }
 
-        smartaclconfig = config.smartacl;
+        var smartaclconfig = config.smartacl;
+        var username = smartaclconfig.admin_user;
+        var password = smartaclconfig.admin_pass;
+        super_user = smartaclconfig.super_user;
+
+        // 401 Basic Auth username / password
+        auth = "Basic " + Base64.encode(username + ":"+ password);
 
         var connect_info = '';
         connect_info += 'host=' + config.postgres.host + ' ';
@@ -199,7 +208,7 @@ function getCommitter(req, res, domain, username) {
       if (uid != null) {
 
         // RSP requires a "super" user, so we add that here
-        if(uid == smartaclconfig.super_user){
+        if(uid == super_user){
             res.simpleJson(200,{canCommit:true});
             return;
         }
@@ -300,13 +309,6 @@ function postCommitter(req, res, domain, username) {
   }
 
 }
-
-
-// 401 Basic Auth username / password
-var username = smartaclconfig.admin_user;
-var password = smartaclconfig.admin_pass;
-var auth = "Basic " + Base64.encode(username + ":"+ password);
-
 
 // ================================= //
 
