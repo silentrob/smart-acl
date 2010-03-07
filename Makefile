@@ -28,16 +28,14 @@ checkout:
 	$(GIT) submodule init
 	$(GIT) submodule update
 
-build :: build_node build_postgres
+build :: build_node
 
 build_node :: checkout
 	$(CD) node; $(PYTHON) tools/waf-light configure --prefix=$(PREFIX)/local/
 	$(CD) node; $(PYTHON) tools/waf-light build
 
 build_postgres :: checkout build_node
-	$(MKPATH) $(TOP)/node/lib/node
-	$(LN_S) $(TOP)/node/tools/wafadmin $(TOP)/node/lib/node/wafadmin
-	$(CD) postgres; $(TOP)/node/bin/node-waf configure build
+	$(CD) postgres; $(PREFIX)/local/bin/node-waf configure build
 	$(CD) postgres; $(MV) postgres.js index.js
 
 build_router :: checkout build_node
@@ -52,7 +50,7 @@ clean_libs:
 	-$(RM_RF) postgres
 	-$(RM_RF) router
 
-install: build install_env install_node install_postgres install_router
+install: build install_env install_node build_postgres install_postgres install_router
 	$(CP) app.js $(PREFIX)/app.js
 	$(SED) -e '1s"^#!.\+$$"#!$(PREFIX)/local/bin/node"' $(PREFIX)/app.js
 	$(MKPATH) $(PREFIX)/share
@@ -66,7 +64,6 @@ install_node:
 	$(CD) node; $(PYTHON) tools/waf-light install
 
 install_postgres: install_node
-	# I wish I could ask node for where it believes it's libraries to be
 	$(CP_R) postgres $(PREFIX)/local/lib/node/libraries/
 
 install_router: install_node
