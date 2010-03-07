@@ -34,7 +34,7 @@ build_node :: checkout
 	$(CD) node; $(PYTHON) tools/waf-light build
 
 build_postgres :: checkout build_node
-	$(CD) postgres; $(TOP)/local/bin/node-waf configure build
+	$(CD) postgres; $(TOP)/node/bin/node-waf configure build
 	$(CD) postgres; $(MV) postgres.js index.js
 
 build_router :: checkout build_node
