@@ -52,7 +52,7 @@ clean_libs:
 
 install: build install_env install_node build_postgres install_postgres install_router
 	$(CP) app.js $(PREFIX)/app.js
-	$(SED) -e '1s"^#!.\+$$"#!$(PREFIX)/local/bin/node"' $(PREFIX)/app.js
+	$(SED) -i -e '1s"^#!.\+$$"#!$(PREFIX)/local/bin/node"' $(PREFIX)/app.js
 	$(MKPATH) $(PREFIX)/share
 	$(CP) schema.sql $(PREFIX)/share/
 	$(CP) smartacl.conf $(PREFIX)/
