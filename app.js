@@ -215,7 +215,7 @@ function getCommitter(req, res, domain, username) {
         getHostID(domain,function(hid){
           if (hid != null) {
             c.query("SELECT id FROM host_committer_map WHERE committer_id = "+uid+" AND host_id = " + hid + ";", function(results) {
-              if (typeof results != "undefined") {
+              if (results != undefined) {
                 res.simpleJson(200, {canCommit:true});
               } else {
                 res.simpleJson(200, {canCommit:false});
@@ -234,7 +234,7 @@ function getCommitter(req, res, domain, username) {
 
 function addCommitterMap(userID,hostID,callback) {
   c.query("SELECT id FROM host_committer_map WHERE committer_id = "+userID+" AND host_id = " + hostID + ";", function(results) {
-    if (typeof results == "undefined") {
+    if (results == undefined) {
       c.query("INSERT INTO host_committer_map (host_id, committer_id) VALUES("+hostID+","+userID+") RETURNING id;", function(e) {
         var status = (e instanceof Error) ?  400 : 201;
         callback(status);
@@ -247,7 +247,7 @@ function addCommitterMap(userID,hostID,callback) {
 
 function getCommitterID(username, callback) {
   c.query("SELECT id FROM committer WHERE name = '"+username+"';", function(committerResults) {
-     if (typeof committerResults == "undefined") {
+     if (committerResults == undefined) {
        callback(null);
      } else {
       callback(committerResults[0]);
@@ -258,7 +258,7 @@ function getCommitterID(username, callback) {
 function getInsertCommitterID(username, callback) {
 
   c.query("SELECT id FROM committer WHERE name = '"+username+"';", function(committerResults) {
-     if (typeof committerResults == "undefined") {
+     if (committerResults == undefined) {
        c.query("INSERT INTO committer (id, name, created_at) VALUES(DEFAULT,'"+username+"',NOW()) RETURNING id;", function(id) {
           callback(id);
        });    
@@ -270,7 +270,7 @@ function getInsertCommitterID(username, callback) {
 
 function getHostID(domain, callback) {
   c.query("SELECT id FROM hosts WHERE hosts = '"+domain+"';", function(results) {     
-    if (typeof results == "undefined") {      
+    if (results == undefined) {
       callback(null);            
     } else {
       callback(results[0]);      
@@ -280,7 +280,7 @@ function getHostID(domain, callback) {
 
 function getInsertHostID(domain, callback) {
   c.query("SELECT id FROM hosts WHERE hosts = '"+domain+"';", function(results) {     
-    if (typeof results == "undefined") {      
+    if (results == undefined) {
       c.query("INSERT INTO hosts (id, hosts, created_at) VALUES(DEFAULT,'"+domain+"',NOW()) RETURNING id;", function(hostId) {  
         callback(hostId);
       });      
