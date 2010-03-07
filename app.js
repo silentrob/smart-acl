@@ -1,8 +1,13 @@
 
+var AGENT_NAME = 'smart-acl';
+var VERSION = '0.01';
+
 var sys = require("sys");
 var postgres = require("postgres");
 var server = require('router');
+var ini = require('ini');
 
+var smartAclConfig = './smartacl.conf';
 
 /**
 *
@@ -145,20 +150,43 @@ var Base64 = {
 }
 
 // -- 
+var c;
+var smartaclconfig;
 
-var c = postgres.createConnection("host=localhost dbname=smart_acl");
-c.addListener("connect", function() {
-  sys.puts("connected");
-  sys.puts(c.readyState);
+posix.readFile(smartAclConfig, function(e, d) {
+    if(e){
+        throw new Error("[ERROR] Unable to read configuration file: " + smartAclConfig);
+    } else {
+        var config;
+        try {
+            config = ini.parse(d);
+        } catch (err) {
+            throw new Error("[ERROR] Unable to parse config file '" + smartAclConfig + "': " + err);
+        }
+
+        smartaclconfig = config.smartacl;
+
+        var connect_info = '';
+        connect_info += 'host=' + config.postgres.host + ' ';
+        connect_info += 'dbname=' + config.postgres.database + ' ';
+        connect_info += 'user=' + config.postgres.user + ' ';
+        connect_info += 'password=' + config.postgres.password;
+        c = postgres.createConnection(connect_info);
+        
+        c.addListener("connect", function() {
+          sys.puts("connected");
+          sys.puts(c.readyState);
+        });
+
+        c.addListener("close", function (err) {
+          sys.puts("connection closed.");
+          if (err) {
+            sys.puts("error: " + err.message);
+          }
+        });
+
+    }
 });
-
-c.addListener("close", function (e) {
-  sys.puts("connection closed.");
-  if (e) {
-    sys.puts("error: " + e.message);
-  }
-});
-
 
 function getCommitter(req, res, domain, username) {  
     
@@ -169,6 +197,13 @@ function getCommitter(req, res, domain, username) {
   
     getCommitterID(username,function(uid){
       if (uid != null) {
+
+        // RSP requires a "super" user, so we add that here
+        if(uid == smartaclconfig.super_user){
+            res.simpleJson(200,{canCommit:true});
+            return;
+        }
+
         getHostID(domain,function(hid){
           if (hid != null) {
             c.query("SELECT id FROM host_committer_map WHERE committer_id = "+uid+" AND host_id = " + hid + ";", function(results) {
@@ -268,8 +303,8 @@ function postCommitter(req, res, domain, username) {
 
 
 // 401 Basic Auth username / password
-var username = 'user';
-var password = 'pass';
+var username = smartaclconfig.admin_user;
+var password = smartaclconfig.admin_pass;
 var auth = "Basic " + Base64.encode(username + ":"+ password);
 
 
