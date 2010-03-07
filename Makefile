@@ -28,7 +28,7 @@ checkout:
 	$(GIT) submodule init
 	$(GIT) submodule update
 
-build :: build_node
+build :: build_node build_router
 
 build_node :: checkout
 	$(CD) node; $(PYTHON) tools/waf-light configure --prefix=$(PREFIX)/local/
