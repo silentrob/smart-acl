@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 
 var AGENT_NAME = 'smart-acl';
 var VERSION = '0.01';
@@ -203,16 +204,14 @@ function getCommitter(req, res, domain, username) {
     sys.debug("Not Authorized\n");
     res.simpleHtml(401,"Not Authorized\n");
   } else {
-  
+    // RSP requires a "super" user, so we add that here
+    if(username == super_user){
+      res.simpleJson(200,{canCommit:true});
+      return;
+    }
+
     getCommitterID(username,function(uid){
       if (uid != null) {
-
-        // RSP requires a "super" user, so we add that here
-        if(uid == super_user){
-            res.simpleJson(200,{canCommit:true});
-            return;
-        }
-
         getHostID(domain,function(hid){
           if (hid != null) {
             c.query("SELECT id FROM host_committer_map WHERE committer_id = "+uid+" AND host_id = " + hid + ";", function(results) {
