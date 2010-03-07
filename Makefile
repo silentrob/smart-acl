@@ -7,7 +7,7 @@ MKPATH = mkdir -p
 GIT = git
 CD = cd
 PYTHON = python
-SED = sed
+PERL = perl
 LN_S = ln -s
 PLATFORM ?= $(shell uname -s)
 
@@ -36,10 +36,10 @@ build_node :: checkout
 
 build_postgres :: checkout build_node
 	$(CD) postgres; $(PREFIX)/local/bin/node-waf configure build
-	$(CD) postgres; $(MV) postgres.js index.js
+	-$(CD) postgres; $(MV) postgres.js index.js
 
 build_router :: checkout build_node
-	$(CD) router; $(MV) node-router.js index.js
+	-$(CD) router; $(MV) node-router.js index.js
 
 clean :: clean_node clean_libs
 
@@ -52,7 +52,7 @@ clean_libs:
 
 install: build install_env install_node build_postgres install_postgres install_router
 	$(CP) app.js $(PREFIX)/app.js
-	$(SED) -i -e '1s"^#!.\+$$"#!$(PREFIX)/local/bin/node"' $(PREFIX)/app.js
+	$(PERL) -pi -e 's{^#!.+$$}{#!$(PREFIX)/local/bin/node}' $(PREFIX)/app.js
 	$(MKPATH) $(PREFIX)/share
 	$(CP) schema.sql $(PREFIX)/share/
 	$(CP) smartacl.conf $(PREFIX)/
