@@ -8,6 +8,7 @@ GIT = git
 CD = cd
 PYTHON = python
 SED = sed
+LN_S = ln -s
 PLATFORM ?= $(shell uname -s)
 
 ifeq ($(PLATFORM),SunOS)
@@ -34,6 +35,8 @@ build_node :: checkout
 	$(CD) node; $(PYTHON) tools/waf-light build
 
 build_postgres :: checkout build_node
+	$(MKPATH) $(TOP)/node/lib/node
+	$(LN_S) $(TOP)/node/tools/wafadmin $(TOP)/node/lib/node/wafadmin
 	$(CD) postgres; $(TOP)/node/bin/node-waf configure build
 	$(CD) postgres; $(MV) postgres.js index.js
 
