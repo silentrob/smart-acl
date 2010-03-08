@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/opt/local/agents/smart-acl/local/bin/node
 
 var AGENT_NAME = 'smart-acl';
 var VERSION = '0.01';
@@ -180,8 +180,8 @@ posix.readFile(smartAclConfig, function(e, d) {
         var connect_info = '';
         connect_info += 'host=' + config.postgres.host + ' ';
         connect_info += 'dbname=' + config.postgres.database + ' ';
-        connect_info += 'user=' + config.postgres.user + ' ';
-        connect_info += 'password=' + config.postgres.password;
+        // connect_info += 'user=' + config.postgres.user + ' ';
+        // connect_info += 'password=' + config.postgres.password;
         c = postgres.createConnection(connect_info);
         
         c.addListener("connect", function() {
@@ -215,8 +215,8 @@ function getCommitter(req, res, domain, username) {
       if (uid != null) {
         getHostID(domain,function(hid){
           if (hid != null) {
-            c.query("SELECT id FROM host_committer_map WHERE committer_id = "+uid+" AND host_id = " + hid + ";", function(results) {
-              if (results != undefined) {
+            c.query("SELECT id FROM host_committer_map WHERE committer_id = "+uid+" AND host_id = " + hid + ";", function(err, results) {
+              if (results.length != 0) {
                 res.simpleJson(200, {canCommit:true});
               } else {
                 res.simpleJson(200, {canCommit:false});
@@ -234,10 +234,10 @@ function getCommitter(req, res, domain, username) {
 }
 
 function addCommitterMap(userID,hostID,callback) {
-  c.query("SELECT id FROM host_committer_map WHERE committer_id = "+userID+" AND host_id = " + hostID + ";", function(results) {
-    if (results == undefined) {
-      c.query("INSERT INTO host_committer_map (host_id, committer_id) VALUES("+hostID+","+userID+") RETURNING id;", function(e) {
-        var status = (e instanceof Error) ?  400 : 201;
+  c.query("SELECT id FROM host_committer_map WHERE committer_id = "+userID+" AND host_id = " + hostID + ";", function(err, results) {
+    if (results.length == 0) {
+      c.query("INSERT INTO host_committer_map (host_id, committer_id) VALUES("+hostID+","+userID+") RETURNING id;", function(err, results) {             
+        var status = (err != null) ?  400 : 201;
         callback(status);
       });      
     } else {
@@ -247,20 +247,20 @@ function addCommitterMap(userID,hostID,callback) {
 }
 
 function getCommitterID(username, callback) {
-  c.query("SELECT id FROM committer WHERE name = '"+username+"';", function(committerResults) {
-     if (committerResults == undefined) {
-       callback(null);
-     } else {
+  c.query("SELECT id FROM committer WHERE name = '"+username+"';", function(err,committerResults) {
+    if (committerResults.length == 0) {
+      callback(null);
+    } else {
       callback(committerResults[0]);
-     }
+    }
   });    
 }
 
 function getInsertCommitterID(username, callback) {
 
-  c.query("SELECT id FROM committer WHERE name = '"+username+"';", function(committerResults) {
-     if (committerResults == undefined) {
-       c.query("INSERT INTO committer (id, name, created_at) VALUES(DEFAULT,'"+username+"',NOW()) RETURNING id;", function(id) {
+  c.query("SELECT id FROM committer WHERE name = '"+username+"';", function(err, committerResults) {
+     if (committerResults.length == 0) {
+       c.query("INSERT INTO committer (id, name, created_at) VALUES(DEFAULT,'"+username+"',NOW()) RETURNING id;", function(err,id) {
           callback(id);
        });    
      } else {
@@ -270,8 +270,8 @@ function getInsertCommitterID(username, callback) {
 }
 
 function getHostID(domain, callback) {
-  c.query("SELECT id FROM hosts WHERE hosts = '"+domain+"';", function(results) {     
-    if (results == undefined) {
+  c.query("SELECT id FROM hosts WHERE hosts = '"+domain+"';", function(err,results) {     
+    if (results.length == 0) {
       callback(null);            
     } else {
       callback(results[0]);      
@@ -280,8 +280,8 @@ function getHostID(domain, callback) {
 }
 
 function getInsertHostID(domain, callback) {
-  c.query("SELECT id FROM hosts WHERE hosts = '"+domain+"';", function(results) {     
-    if (results == undefined) {
+  c.query("SELECT id FROM hosts WHERE hosts = '"+domain+"';", function(err,results) {     
+    if (results.length == 0) {
       c.query("INSERT INTO hosts (id, hosts, created_at) VALUES(DEFAULT,'"+domain+"',NOW()) RETURNING id;", function(hostId) {  
         callback(hostId);
       });      
