@@ -5,11 +5,12 @@ var VERSION = '0.01';
 
 var sys = require("sys");
 var posix = require("fs");
+var path = require("path");
 var postgres = require("postgres");
 var server = require('router');
 var ini = require('ini');
 
-var smartAclConfig = './smartacl.conf';
+var smartAclConfig = path.join(__dirname, 'smartacl.conf');
 
 /**
 *
