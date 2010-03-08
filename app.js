@@ -180,8 +180,8 @@ posix.readFile(smartAclConfig, function(e, d) {
         var connect_info = '';
         connect_info += 'host=' + config.postgres.host + ' ';
         connect_info += 'dbname=' + config.postgres.database + ' ';
-        // connect_info += 'user=' + config.postgres.user + ' ';
-        // connect_info += 'password=' + config.postgres.password;
+        connect_info += 'user=' + config.postgres.user + ' ';
+        connect_info += 'password=' + config.postgres.password;
         c = postgres.createConnection(connect_info);
         
         c.addListener("connect", function() {
