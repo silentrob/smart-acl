@@ -71,6 +71,7 @@ install: build install_env install_node build_postgres install_postgres install_
 	$(PERL) -pi -e 's{^#!.+$$}{#!$(PREFIX)/local/bin/node}' $(PREFIX)/app.js
 	$(MKPATH) $(PREFIX)/share
 	$(CP) schema.sql $(PREFIX)/share/
+	$(CP) smart-acl.xml $(PREFIX)/share/
 	$(CP) smartacl.conf $(PREFIX)/
 
 install_env:
