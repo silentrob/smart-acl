@@ -246,6 +246,12 @@ function addCommitterMap(userID,hostID,callback) {
   });
 }
 
+function delCommitterMap(userID,hostID,callback) {
+  c.query("DELETE FROM host_committer_map WHERE committer_id = "+userID+" AND host_id = " + hostID + ";", function(err, results) {
+    callback(200);
+  });  
+}
+
 function getCommitterID(username, callback) {
   c.query("SELECT id FROM committer WHERE name = '"+username+"';", function(err,committerResults) {
     if (committerResults.length == 0) {
@@ -307,6 +313,31 @@ function postCommitter(req, res, domain, username) {
       });        
     });
   }
+}
+
+function delCommitter(req, res, domain, username) {
+  if (!req.headers.hasOwnProperty('authorization') || (req.headers.hasOwnProperty('authorization') && (auth != req.headers['authorization']))) {  
+    sys.debug("Not Authorized\n");
+    res.simpleHtml(401,"Not Authorized\n");
+    
+  } else {
+  
+    getHostID(domain,function(hostId){
+      if (hostId != null) { 
+        getCommitterID(username,function(userId){
+          if (userId != null) {
+            delCommitterMap(userId,hostId,function(status){
+              res.simpleJson(status,{done:status});
+            });
+          } else {
+            res.simpleJson(406,{done:406});
+          }
+        });        
+      } else {
+        res.simpleJson(406,{done:406});
+      }
+    });
+  }
 
 }
 
@@ -317,10 +348,14 @@ function postCommitter(req, res, domain, username) {
 // Returns 200, 401, 404 
 server.get(new RegExp("^\/hosts\/([a-z0-9.-]*)\/committers\/([a-z0-9]*)$"), getCommitter);
 
-// POST /hosts/<smart-host>
 // POST /hosts/<smart-host>/committers/<user-name>
 // curl -X POST --url http://127.0.0.1:8080/hosts/somedomain.com/committers/silentrob -u admin:secret -H 'Accept: application/json'
 // Returns 201, 400, 401, 404
-// server.post(new RegExp("^\/hosts\/([a-z0-9.-]*)$"), postHost);
 server.post(new RegExp("^\/hosts\/([a-z0-9.-]*)\/committers\/([a-z0-9]*)$"), postCommitter);
+
+// DELETE /hosts/<smart-host>/committers/<user-name>
+// curl -X DELETE --url http://127.0.0.1:8080/hosts/somedomain.com/committers/silentrob -u admin:secret -H 'Accept: application/json'
+// Returns 200, 401
+server.del(new RegExp("^\/hosts\/([a-z0-9.-]*)\/committers\/([a-z0-9]*)$"), delCommitter);
+
 server.listen(8080);
