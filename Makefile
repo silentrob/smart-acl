@@ -72,7 +72,7 @@ install: build install_env install_node build_postgres install_postgres install_
 	$(MKPATH) $(PREFIX)/share
 	$(CP) schema.sql $(PREFIX)/share/
 	$(CP) smart-acl.xml $(PREFIX)/share/
-	$(CP) smartacl.conf $(PREFIX)/
+	$(CP) smartacl.conf $(PREFIX)/share/
 
 install_env:
 	$(MKPATH) $(PREFIX)

@@ -1,3 +1,4 @@
+BEGIN;
 
 CREATE TABLE committer (
     id SERIAL PRIMARY KEY,
@@ -18,3 +19,4 @@ CREATE TABLE host_committer_map (
     PRIMARY KEY ( host_id, committer_id )
 );
 
+COMMIT;
