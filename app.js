@@ -1,7 +1,7 @@
-#!/opt/local/agents/smart-acl/local/bin/node
+#!/usr/bin/env node
 
 var AGENT_NAME = 'smart-acl';
-var VERSION = '0.01';
+var VERSION = '0.02';
 
 var sys = require("sys");
 var posix = require("fs");
@@ -215,7 +215,7 @@ function getCommitter(req, res, domain, username) {
       if (uid != null) {
         getHostID(domain,function(hid){
           if (hid != null) {
-            c.query("SELECT id FROM host_committer_map WHERE committer_id = "+uid+" AND host_id = " + hid + ";", function(err, results) {
+            c.query("SELECT 1 FROM host_committer_map WHERE committer_id = "+uid+" AND host_id = " + hid + ";", function(err, results) {
               if (results.length != 0) {
                 res.simpleJson(200, {canCommit:true});
               } else {
@@ -234,9 +234,9 @@ function getCommitter(req, res, domain, username) {
 }
 
 function addCommitterMap(userID,hostID,callback) {
-  c.query("SELECT id FROM host_committer_map WHERE committer_id = "+userID+" AND host_id = " + hostID + ";", function(err, results) {
+  c.query("SELECT 1 FROM host_committer_map WHERE committer_id = "+userID+" AND host_id = " + hostID + ";", function(err, results) {
     if (results.length == 0) {
-      c.query("INSERT INTO host_committer_map (host_id, committer_id) VALUES("+hostID+","+userID+") RETURNING id;", function(err, results) {             
+      c.query("INSERT INTO host_committer_map (host_id, committer_id) VALUES("+hostID+","+userID+")", function(err, results) {             
         var status = (err != null) ?  400 : 201;
         callback(status);
       });      
@@ -263,16 +263,9 @@ function getCommitterID(username, callback) {
 }
 
 function getInsertCommitterID(username, callback) {
-
-  c.query("SELECT id FROM committer WHERE name = '"+username+"';", function(err, committerResults) {
-     if (committerResults.length == 0) {
-       c.query("INSERT INTO committer (id, name, created_at) VALUES(DEFAULT,'"+username+"',NOW()) RETURNING id;", function(err,id) {
-          callback(id);
-       });    
-     } else {
-       callback(committerResults[0]);
-     }
-  });    
+    c.query("SELECT get_or_create_committer('"+username+"');", function(err, results) {
+        callback(results[0]); 
+    });
 }
 
 function getHostID(domain, callback) {
@@ -285,16 +278,10 @@ function getHostID(domain, callback) {
   });
 }
 
-function getInsertHostID(domain, callback) {
-  c.query("SELECT id FROM hosts WHERE hosts = '"+domain+"';", function(err,results) {     
-    if (results.length == 0) {
-      c.query("INSERT INTO hosts (id, hosts, created_at) VALUES(DEFAULT,'"+domain+"',NOW()) RETURNING id;", function(hostId) {  
-        callback(hostId);
-      });      
-    } else {
-      callback(results[0]);      
-    }
-  });
+function getInsertHostID(domain, username, callback) {
+    c.query("SELECT get_or_create_host('"+domain+"', '"+username+"');", function(err, results) {
+        callback(results[0]); 
+    });
 }
 
 function postCommitter(req, res, domain, username) {
@@ -305,7 +292,7 @@ function postCommitter(req, res, domain, username) {
     
   } else {
   
-    getInsertHostID(domain,function(hostId){
+    getInsertHostID(domain,username,function(hostId){
       getInsertCommitterID(username,function(userId){
         addCommitterMap(userId,hostId,function(status){
           res.simpleJson(status,{done:status});
