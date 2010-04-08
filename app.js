@@ -328,21 +328,57 @@ function delCommitter(req, res, domain, username) {
 
 }
 
+function getCommitterList(req, res, domain) {
+    
+  if (!req.headers.hasOwnProperty('authorization') || (req.headers.hasOwnProperty('authorization') && (auth != req.headers['authorization']))) {  
+    sys.debug("Not Authorized\n");
+    res.simpleHtml(401,"Not Authorized\n");
+    
+  } else {
+    var query_str = "SELECT name, CASE WHEN hosts.owner_id = committer.id THEN true ELSE false END AS owner "
+        + "FROM host_committer_map JOIN committer ON committer.id = host_committer_map.committer_id "
+        + "JOIN hosts ON hosts.id = host_committer_map.host_id WHERE hosts.hosts = '"+domain+"';";
+
+    c.query(query_str, function(err, results){
+        if( results.length > 0 ){
+            var obj = {};
+            while(results.length){
+                var row = results.shift();
+                var name = row[0];
+                var is_owner = row[1];
+                obj[ name ] = { writable: true, readble: true };
+                obj[ name ].owner = is_owner ? true : false;
+            }
+            res.simpleJson(200, obj);
+        } else {
+            res.simpleJson(404, {});
+        }
+    });
+  }
+
+}
+
 // ================================= //
 
 // GET /hosts/<smart-host>/committers/<user-name>
 // curl -X GET --url http://127.0.0.1:8080/hosts/somedomain.com/committers/silentrob -u admin:secret -H 'Accept: application/json'
 // Returns 200, 401, 404 
-server.get(new RegExp("^\/hosts\/([a-z0-9.-]*)\/committers\/([a-z0-9]*)$"), getCommitter);
+server.get(new RegExp("^\/hosts\/([a-z0-9.-]+)\/committers\/([a-z0-9]+)$"), getCommitter);
 
 // POST /hosts/<smart-host>/committers/<user-name>
 // curl -X POST --url http://127.0.0.1:8080/hosts/somedomain.com/committers/silentrob -u admin:secret -H 'Accept: application/json'
 // Returns 201, 400, 401, 404
-server.post(new RegExp("^\/hosts\/([a-z0-9.-]*)\/committers\/([a-z0-9]*)$"), postCommitter);
+server.post(new RegExp("^\/hosts\/([a-z0-9.-]+)\/committers\/([a-z0-9]+)$"), postCommitter);
 
 // DELETE /hosts/<smart-host>/committers/<user-name>
 // curl -X DELETE --url http://127.0.0.1:8080/hosts/somedomain.com/committers/silentrob -u admin:secret -H 'Accept: application/json'
 // Returns 200, 401
-server.del(new RegExp("^\/hosts\/([a-z0-9.-]*)\/committers\/([a-z0-9]*)$"), delCommitter);
+server.del(new RegExp("^\/hosts\/([a-z0-9.-]+)\/committers\/([a-z0-9]+)$"), delCommitter);
+
+// GET /hosts/<smart-host>/committers
+// curl -X GET --url http://127.0.0.1:8080/hosts/somedomain.com/committers -u admin:secret -H 'Accept: application/json'
+// Returns 200, 401, 404 
+server.get(new RegExp("^\/hosts\/([a-z0-9.-]+)\/committers$"), getCommitterList);
+
 
 server.listen(8080);
